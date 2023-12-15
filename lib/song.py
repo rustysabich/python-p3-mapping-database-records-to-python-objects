@@ -4,7 +4,8 @@ CONN = sqlite3.connect('music.db')
 CURSOR = CONN.cursor()
 
 class Song:
-
+    
+    # default empty values can help avoid errors later on
     all = []
 
     def __init__(self, name, album):
@@ -48,4 +49,38 @@ class Song:
         song.save()
         return song
 
-    # new code goes here!
+    # method to get new record from database and create Python object
+    @classmethod
+    def new_from_db(cls, row):
+        song = cls(row[1], row[2])
+        song.id = row[0]
+        return song
+    
+    # get all records from the database
+    @classmethod
+    def get_all(cls):
+        sql = """
+            SELECT * 
+            FROM songs
+        """
+        
+        all = CURSOR.execute(sql).fetchall()
+        
+        # iterate over each row and create an object
+        cls.all = [cls.new_from_db(row) for row in all]
+        return cls.all
+    
+    # find a record by name
+    @classmethod
+    def find_by_name(cls, name):
+        sql = """
+            SELECT *
+            FROM songs
+            WHERE name = ?
+            LIMIT 1
+        """
+        
+        song = CURSOR.execute(sql, (name,)).fetchone()
+        # Note: Bound parameters must be passed to the execute statement as a sequence data type
+        
+        return cls.new_from_db(song)
